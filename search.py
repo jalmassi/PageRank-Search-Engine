@@ -4,6 +4,7 @@ import time
 import shelve
 import re
 import math
+from collections import Counter
 
 
 def stem_word(word1):
@@ -52,57 +53,83 @@ freq = shelve.open('frequency.shlf') #saved postings
 N = len(freq)
 
 while 1:
-    search_term = input('Enter term(s) to search: ')
-    if stem:
-        search_term = stem_word(search_term)
-    start = time.time()
-    if search_term == 'zzend' or search_term == 'ZZEND':
-        if count > 0:
-            print("Average query time: " + str(avgTime) + " seconds")
-        break
-    # search for term in databases
-    for word in freq.keys():
-        if search_term == word:
-            df = freq[word]
+    splitWords = input('Enter term(s) to search: ').split()
+    for search_term in splitWords:
+        if stem:
+            search_term = stem_word(search_term)
+        start = time.time()
+        if search_term == 'zzend' or search_term == 'ZZEND':
+            if count > 0:
+                print("Average query time: " + str(avgTime) + " seconds")
+            break
+        # search for term in databases
+        for word in freq.keys():
+            if search_term == word:
+                df = freq[word]
 
-    idf = math.log10(N/df)
-    weights = {}
-    for term in post.keys():
-        if term != search_term:
-            continue
-        frequency = True
-        for out in post[term]:
-            for docID in out:
-                frequency = out[docID][0]
+        idf = math.log10(N/df)
+
+        IDs = []
+        weights = {}
+        distances = {}
+        sumSquaredWeights = {}
+        for term in post.keys():
+            if term != search_term:
+                continue
+            #frequency = True
+            for out in post[term]:
+                for docID in out:
+                    frequency = out[docID][0]
+                    IDs.append(docID)
+
+                    tf = 1 + math.log10(frequency)
+                    w = tf * idf
+
+                    if docID in sumSquaredWeights:
+                        sumSquaredWeights[docID] += pow(w,2)
+                    else:
+                        sumSquaredWeights[docID] = pow(w,2)
+
+                    if docID not in weights:
+                        weights[docID] = []
+                        weights[docID].append(w)
+                    else:
+                        weights[docID].append(w)
 
 
-                tf = 1 + math.log10(frequency)
-                w = tf * idf
-                weights[docID] = w
+    distances = {key: math.sqrt(value) for key, value in sumSquaredWeights.items()}
+        #distance = math.sqrt(sum(squared.values()))
 
-        print(weights)
+    #distances[docID] = distance
+
+    print(weights)
+    print(distances)
+    print(sumSquaredWeights)
+
+for id in IDs:
+    
 
 
-
-'''    print("---------------------------------------------------------------------------------------------------")
-    if frequency:
-        print('Document Frequency: ' + str(docdb.getWordFreq(search_term)))
-    else:
-        print('Document Frequency: None')
-    frequency = False
-    count += 1
-    end = time.time()
-    duration = end - start
-    duration = round(duration, 3)
-    query_times.append(duration)
-    avgTime = sum(query_times) / count
-    avgTime = round(avgTime, 3)
-    print("Time for query: " + str(duration) + " seconds")
-    print("---------------------------------------------------------------------------------------------------")
+'''
+print("---------------------------------------------------------------------------------------------------")
+if frequency:
+    print('Document Frequency: ' + str(docdb.getWordFreq(search_term)))
+else:
+    print('Document Frequency: None')
+frequency = False
+count += 1
+end = time.time()
+duration = end - start
+duration = round(duration, 3)
+query_times.append(duration)
+avgTime = sum(query_times) / count
+avgTime = round(avgTime, 3)
+print("Time for query: " + str(duration) + " seconds")
+print("---------------------------------------------------------------------------------------------------")
 post.clear()
 freq.clear()
 for term in post.keys():
-    del post[term]
+del post[term]
 post.close()
 freq.close()'''
 
