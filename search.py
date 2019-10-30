@@ -27,6 +27,7 @@ index = Invert(db)
 docdb = DocFreqDb()
 search_term = ''
 frequency = False
+df = 0
 
 for line in stStop.readlines():
     for word in line.split():
@@ -50,10 +51,11 @@ for key in index.index:  # finds document frequency (how many documents a term i
 post = shelve.open("postings.shlf")  #saved dictionary
 freq = shelve.open('frequency.shlf') #saved postings
 
-N = len(freq)
+N = 3204
 
 while 1:
     splitWords = input('Enter term(s) to search: ').split()
+    IDs = []
     for search_term in splitWords:
         if stem:
             search_term = stem_word(search_term)
@@ -66,10 +68,12 @@ while 1:
         for word in freq.keys():
             if search_term == word:
                 df = freq[word]
+        if df is not 0:
+            idf = math.log10(N/df)
+        else:
+            continue
 
-        idf = math.log10(N/df)
 
-        IDs = []
         weights = {}
         distances = {}
         sumSquaredWeights = {}
@@ -101,35 +105,43 @@ while 1:
         #distance = math.sqrt(sum(squared.values()))
 
     #distances[docID] = distance
+    normWeight = {}
+    sumSqWeights = 0
+    IDs = sorted(IDs)
+    for id in IDs:
+        for document in parse.documents:
+            if document['id'] == id:
+                document['text'] = document['title'] + ' ' + (document['abstract'])
+                wordList = document['text'].split()
+                count = Counter(wordList)
+                # print(count)
+                for wo,f in count.items():
+                    for word in freq.keys():
+                        if wo == word:
+                            tf = 1 + math.log10(f)
+                            for wor in freq.keys():
+                                if search_term == wor:
+                                    df = freq[wor]
+                            idf = math.log(N/df)
+                            weight = tf * idf
+                            squaredWeight = pow(weight,2)
+                            sumSqWeights += squaredWeight
+                            # print('{}: {}'.format(word, freq[word]))
+                normWeight[id] = math.sqrt(sumSqWeights)
 
-    print(weights)
-    print(distances)
-    print(sumSquaredWeights)
+        
+    # print(normWeight.items())
+    # print(weights)
+    # print(distances)
+    # print(sumSquaredWeights)
 
-for id in IDs:
-    
 
 
-'''
-print("---------------------------------------------------------------------------------------------------")
-if frequency:
-    print('Document Frequency: ' + str(docdb.getWordFreq(search_term)))
-else:
-    print('Document Frequency: None')
-frequency = False
-count += 1
-end = time.time()
-duration = end - start
-duration = round(duration, 3)
-query_times.append(duration)
-avgTime = sum(query_times) / count
-avgTime = round(avgTime, 3)
-print("Time for query: " + str(duration) + " seconds")
-print("---------------------------------------------------------------------------------------------------")
-post.clear()
-freq.clear()
-for term in post.keys():
-del post[term]
-post.close()
-freq.close()'''
+
+# post.clear()
+# freq.clear()
+# for term in post.keys():
+# del post[term]
+# post.close()
+# freq.close()
 
