@@ -56,6 +56,7 @@ N = 3204
 while 1:
     splitWords = input('Enter term(s) to search: ').split()
     IDs = []
+    sumWeights = {}
     for search_term in splitWords:
         if stem:
             search_term = stem_word(search_term)
@@ -76,7 +77,7 @@ while 1:
 
         weights = {}
         distances = {}
-        sumSquaredWeights = {}
+
         for term in post.keys():
             if term != search_term:
                 continue
@@ -89,22 +90,23 @@ while 1:
                     tf = 1 + math.log10(frequency)
                     w = tf * idf
 
-                    if docID in sumSquaredWeights:
-                        sumSquaredWeights[docID] += pow(w,2)
+                    if docID in sumWeights:
+                        sumWeights[docID] += w
                     else:
-                        sumSquaredWeights[docID] = pow(w,2)
+                        sumWeights[docID] = w
 
-                    if docID not in weights:
-                        weights[docID] = []
-                        weights[docID].append(w)
-                    else:
-                        weights[docID].append(w)
+                    # if docID not in weights:
+                    #     weights[docID] = []
+                    #     weights[docID].append(w)
+                    # else:
+                    #     weights[docID].append(w)
 
 
-    distances = {key: math.sqrt(value) for key, value in sumSquaredWeights.items()}
-        #distance = math.sqrt(sum(squared.values()))
-
-    #distances[docID] = distance
+    #distances = {key: math.sqrt(value) for key, value in sumSquaredWeights.items()}
+    query_count = Counter(splitWords)
+    query_count = [pow(x,2) for x in query_count.values()]
+    sum_query = sum(query_count)
+    sqrt_query = math.sqrt(sum_query)
     normWeight = {}
     sumSqWeights = 0
     IDs = sorted(IDs)
@@ -112,25 +114,33 @@ while 1:
         for document in parse.documents:
             if document['id'] == id:
                 document['text'] = document['title'] + ' ' + (document['abstract'])
-                wordList = document['text'].split()
+                clean_text = re.sub(r'[^\w\s]', '', document['text'])
+                wordList = clean_text.split(' ')
                 count = Counter(wordList)
+                print(count.items())
                 # print(count)
                 for wo,f in count.items():
                     for word in freq.keys():
                         if wo == word:
                             tf = 1 + math.log10(f)
                             for wor in freq.keys():
-                                if search_term == wor:
+                                if wo == wor:
                                     df = freq[wor]
-                            idf = math.log(N/df)
+                            idf = math.log10(N/df)
                             weight = tf * idf
+                            print(df)
                             squaredWeight = pow(weight,2)
                             sumSqWeights += squaredWeight
                             # print('{}: {}'.format(word, freq[word]))
                 normWeight[id] = math.sqrt(sumSqWeights)
 
-        
-    # print(normWeight.items())
+    sim = {}
+    for docID in IDs:
+        if normWeight is not 0:
+            sim[docID] = (sumWeights[docID])/(sqrt_query*normWeight[docID])
+            # print(normWeight[docID])
+    print(sim.items())
+    # print(idnormWeight.items())
     # print(weights)
     # print(distances)
     # print(sumSquaredWeights)
