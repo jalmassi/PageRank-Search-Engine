@@ -6,10 +6,11 @@ class parseText:
         self.Ab = False
         self.title = []
         self.abstract = []
-        self.doc = {'id': '', 'title': '', 'abstract': ''}
+        self.authors = []
+        self.doc = {'id': '', 'title': '', 'abstract': '','authors': ''}
         self.documents = []
         self.prev = ''
-
+        self.aut = False
     def isStopWord(self, x):
         if x in self.stopWords:
             return True
@@ -23,6 +24,9 @@ class parseText:
             for x in fo.read().split():
 
                 x = x.lower()
+
+                if self.prev == '.a':
+                    self.aut = True
 
                 if self.prev == ".i":
                     self.doc['id'] = int(x)
@@ -39,9 +43,9 @@ class parseText:
                         self.Ab = False
                         self.abstract = (' ').join(self.abstract)
                         self.doc['abstract'] = self.abstract
-                        self.documents.append(self.doc)
+                        # self.documents.append(self.doc)
                         self.abstract = []
-                        self.doc = {'id': '', 'title': '', 'abstract': ''}
+                        # self.doc = {'id': '', 'title': '', 'abstract': ''}
                     else:
                         self.abstract.append(x)
                 if self.T:
@@ -52,13 +56,23 @@ class parseText:
                         self.title = ' '.join(self.title)
                         self.doc['title'] = self.title
                         self.title = []
-                        if not self.Ab:
-                            self.documents.append(self.doc)
-                            self.doc = {'id': '', 'title': '', 'abstract': ''}
+                        # if not self.Ab:
+                        #     self.documents.append(self.doc)
                     else:
                         self.title.append(x)
 
+                if (x == '.k' or x == '.n') and self.aut:
+                    self.aut = False
+                    self.authors = ' '.join(self.authors)
+                    self.doc['authors'] = self.authors
+                    self.documents.append(self.doc)
+                    self.doc = {'id': '', 'title': '', 'abstract': '', 'authors': ''}
+                    self.authors = []
+                elif self.aut:
+                    self.authors.append(x)
+
                 self.prev = x
+
             fo.close()
 
 

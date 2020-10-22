@@ -1,5 +1,9 @@
 import re
 from stem import *
+from parseText import *
+import shelve
+import math
+from collections import Counter
 
 def stem_word(word):
     stemmer = PorterStemmer()
@@ -86,7 +90,7 @@ class Invert:
         stemmer = PorterStemmer
 
     def invert_index(self, document, stopW, stem):
-        document['text'] = document['title'] + ' ' + (document['abstract'])
+        document['text'] = document['title'] + ' ' + document['abstract'] + ' ' + document['authors']
         clean_text = re.sub(r'[^\w\s]', '', document['text'])
         terms = clean_text.split(' ')
         out_dict = dict()
